@@ -7,20 +7,18 @@ extern crate clap;
 
 use std::env;
 use std::fs;
+use std::str::*;
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::prelude::*;
+use std::io::BufRead;
 use std::os::unix;
-use std::path::Path;
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use clap::{Arg, App, SubCommand};
 
 mod api;
 
 use api::project::create_project;
-// use std::io::prelude::*;
-// use std::fs::File;
-// use std::net::TcpListener;
-// use std::net::TcpStream;
 
 fn main() {
     let matches = App::new("Kodesmell")
@@ -29,51 +27,47 @@ fn main() {
         .about("Collect code smells")
         .subcommand(SubCommand::with_name("init")
             .about("Init kodesmell in this repository")
-            .arg(Arg::with_name("input")
-                .help("Select specific folder or file to run kodesmell in this project")
-            )
+        )
+        .subcommand(SubCommand::with_name("run")
+            .about("Run kodesmell in this repository")
         )
         .get_matches();
 
     if let Some(matches) = matches.subcommand_matches("init") {
-        let root = env::current_dir().unwrap();
-        let kodesmell = root.join(".kodesmell");
-        println!("{}", kodesmell.display());
-        
-        create_project("kode")
-        // match fs::create_dir(&kodesmell) {
-        //     Err(why) => {
-        //         println!("Aborting kodesmell init. '.kodesmell' {:?}", why.kind());
-        //     },
-        //     Ok(_) => {
-        //     },
-        // }
+        let dir = get_dir();
+        let piece: Vec<&str> = dir.split(MAIN_SEPARATOR).collect();
+        let name = piece[piece.len() - 1];
+
+        // let id = create_project(name);
+        // println!("{:?}", id);
+
+        let dir = create_kodesmell_dir(&dir).unwrap();
+        println!("{:?}", dir);
+        // write_json(&id);
+    } else if let Some(matches) = matches.subcommand_matches("run") {
+        println!("Running kodesmell init.")
     }
 }
 
-// fn main() {
-//     // Do some initialization work...
-//     //
+fn get_dir() -> std::string::String {
+    let mut dir = env::current_dir().unwrap();
+    dir.into_os_string().into_string().unwrap()
+}
 
-//     let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
-    
-//     for stream in listener.incoming() {
-//         let stream = stream.unwrap();
-//         handle_connect(stream);
-//     }
+fn create_kodesmell_dir(root: &std::string::String) -> io::Result<String> {
+    let path = Path::new(&root).join(".kodesmell/");
 
-// }
+    match fs::create_dir(&path) {
+        Ok(_) => {
+            Ok(path.into_os_string().into_string().unwrap())
+        },
+        Err(e) => {
+            Err(e)
+        }
+    }
+}
 
-// fn handle_connect(mut stream: TcpStream) {
-//     let mut buffer = [0; 512];
-//     stream.read(&mut buffer).unwrap();
-
-//     let mut file = File::open("./index.html").unwrap();
-//     let mut contents = String::new();
-//     file.read_to_string(&mut contents).unwrap();
-
-//     // println!("Request: {}", String::from_utf8_lossy(&buffer[..]));
-//     let response = format!("HTTP/1.1 200 OK\r\n\r\n{}", contents);
-//     stream.write(response.as_bytes()).unwrap();
-//     stream.flush().unwrap();
-// }
+fn write_json(id: &std::string::String) {
+    let mut file = File::create("./foo.txt").expect("hehh");
+    file.write_all(id.as_bytes()).expect("Unable to write data");
+}

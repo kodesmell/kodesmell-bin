@@ -4,7 +4,7 @@ extern crate serde_json;
 use self::serde_json::{from_reader, Value, Error};
 use std::io::Read;
 
-pub fn create_project(name: &str) {
+pub fn create_project(name: &str) -> String {
   let body = json!({
     "query": "mutation($input: CreateProjectInput) {
       createProject(input: $input) {
@@ -29,7 +29,8 @@ pub fn create_project(name: &str) {
 
   let sss = buf.to_string();
   let v: Value = serde_json::from_str(&sss).unwrap();
-  let id = &v["data"]["createProject"]["id"];
-  println!("{:?}", id);
-
+  let id = v["data"]["createProject"]["id"].as_str().unwrap();
+  
+  id.to_string()
+  // ;) Add return;
 }
